@@ -1,26 +1,29 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-hana-green: #00954F;
+  --color-hana-green-light: #E8F5EE;
+  --color-hana-green-dark: #006B38;
+  --color-hana-accent: #00B761;
+
+  --font-sans: "Pretendard", "Apple SD Gothic Neo", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f3f4f6;
+  color: #171717;
+  font-family: var(--font-sans);
+  min-height: 100%;
+}
+
+.app-shell {
+  max-width: 480px;
+  margin: 0 auto;
+  background: #ffffff;
+  min-height: 100vh;
+  position: relative;
 }
