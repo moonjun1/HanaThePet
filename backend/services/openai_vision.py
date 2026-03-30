@@ -62,6 +62,7 @@ def analyze_pet_photo(image_bytes: bytes) -> dict:
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
+            {"role": "system", "content": system_prompt},
             {
                 "role": "user",
                 "content": [
@@ -121,6 +122,7 @@ def analyze_receipt(image_bytes: bytes) -> dict:
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
+            {"role": "system", "content": system_prompt},
             {
                 "role": "user",
                 "content": [

@@ -9,42 +9,86 @@ import SavingsRecommendation from "@/components/SavingsRecommendation";
 import Link from "next/link";
 import { apiPost, ApiTimeoutError } from "@/lib/api";
 
-interface PetAnalysisResult {
-  pet_name: string;
+/* ── Types matching backend PetProfileResponse ── */
+
+interface PhotoAnalysis {
   breed: string;
-  age: number;
-  gender: string;
-  pet_id: string;
+  estimated_age: string;
+  gender_guess: string;
+  health_notes: string;
   confidence: number;
-  lifetime_cost: number;
-  common_conditions: string[];
-  cost_breakdown: {
-    checkup: number;
-    treatment: number;
-    surgery: number;
-  };
-  monthly_savings: number;
-  savings_term_months: number;
-  savings_interest_rate: number;
 }
 
-const SAMPLE_DATA: PetAnalysisResult = {
-  pet_name: "하나",
-  breed: "말티즈",
-  age: 3,
-  gender: "암컷",
-  pet_id: "HANA-MLT-2022-A001",
-  confidence: 0.91,
-  lifetime_cost: 18500000,
-  common_conditions: ["슬개골 탈구", "치주 질환", "피부 알레르기"],
-  cost_breakdown: {
-    checkup: 3700000,
-    treatment: 8300000,
-    surgery: 6500000,
+interface CostPrediction {
+  breed: string;
+  age: number;
+  life_expectancy: number;
+  remaining_years: number;
+  total_lifetime_cost: number;
+  breakdown: { checkup: number; disease: number; surgery: number };
+  common_conditions: string[];
+  risk_multiplier: number;
+}
+
+interface Savings {
+  monthly_amount: number;
+  product_name: string;
+  interest_rate: number;
+  term_years: number;
+  total_deposit: number;
+  benefits: string[];
+}
+
+interface InsuranceItem {
+  product_name: string;
+  adjusted_premium: number;
+  suitable: boolean;
+  features?: string[];
+}
+
+interface BackendResponse {
+  photo_analysis: PhotoAnalysis;
+  cost_prediction: CostPrediction;
+  savings: Savings;
+  insurance: InsuranceItem[];
+}
+
+/* ── Sample fallback ── */
+
+const SAMPLE_RESPONSE: BackendResponse = {
+  photo_analysis: {
+    breed: "말티즈",
+    estimated_age: "3세",
+    gender_guess: "수컷",
+    health_notes: "샘플 데이터입니다.",
+    confidence: 0.0,
   },
-  monthly_savings: 154000,
-  savings_term_months: 120,
-  savings_interest_rate: 3.5,
+  cost_prediction: {
+    breed: "말티즈",
+    age: 3,
+    life_expectancy: 15,
+    remaining_years: 12,
+    total_lifetime_cost: 8240000,
+    breakdown: { checkup: 2400000, disease: 4500000, surgery: 1340000 },
+    common_conditions: ["슬개골 탈구", "치주질환", "유루증"],
+    risk_multiplier: 1.1,
+  },
+  savings: {
+    monthly_amount: 46000,
+    product_name: "하나더펫 적금",
+    interest_rate: 3.5,
+    term_years: 12,
+    total_deposit: 6624000,
+    benefits: ["반려동물 병원비 우선 지원"],
+  },
+  insurance: [
+    {
+      product_name: "하나더펫 베이직",
+      adjusted_premium: 16500,
+      suitable: true,
+      features: ["통원 치료비", "입원 치료비", "수술비"],
+    },
+  ],
 };
 
 type Stage = "input" | "loading" | "result";
@@ -52,7 +96,7 @@ type Stage = "input" | "loading" | "result";
 export default function PetProfilePage() {
   const [petName, setPetName] = useState("");
   const [stage, setStage] = useState<Stage>("input");
-  const [result, setResult] = useState<PetAnalysisResult | null>(null);
+  const [result, setResult] = useState<BackendResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleUpload(file: File) {
@@ -68,22 +112,19 @@ export default function PetProfilePage() {
     fd.append("pet_name", petName.trim());
 
     try {
-      const data = await apiPost<PetAnalysisResult>("/api/pet/analyze", fd, 30000);
+      const data = await apiPost<BackendResponse>("/api/pet/analyze", fd, 30000);
       setResult(data);
       setStage("result");
     } catch (err) {
       if (err instanceof ApiTimeoutError) {
-        // timeout handled by spinner fallback button
         return;
       }
-      // API error — show error but stay in loading so spinner timeout still works
       console.error(err);
     }
   }
 
   function handleTimeout() {
-    const sample = { ...SAMPLE_DATA, pet_name: petName.trim() || SAMPLE_DATA.pet_name };
-    setResult(sample);
+    setResult(SAMPLE_RESPONSE);
     setStage("result");
   }
 
@@ -93,6 +134,10 @@ export default function PetProfilePage() {
     setResult(null);
     setError(null);
   }
+
+  const photo = result?.photo_analysis;
+  const cost = result?.cost_prediction;
+  const savings = result?.savings;
 
   return (
     <div className="px-4 py-5 space-y-5">
@@ -105,7 +150,6 @@ export default function PetProfilePage() {
 
       {stage === "input" && (
         <>
-          {/* Pet name input */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               반려동물 이름
@@ -120,7 +164,6 @@ export default function PetProfilePage() {
             {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
           </div>
 
-          {/* Image uploader */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               반려동물 사진
@@ -142,7 +185,7 @@ export default function PetProfilePage() {
         />
       )}
 
-      {stage === "result" && result && (
+      {stage === "result" && photo && cost && savings && (
         <div className="space-y-4">
           {/* Confidence */}
           <div className="rounded-xl bg-[#E8F5EE] px-4 py-2.5 flex items-center gap-2">
@@ -150,26 +193,31 @@ export default function PetProfilePage() {
             <p className="text-xs text-[#006B38] font-medium">
               AI 분석 신뢰도:{" "}
               <span className="font-bold text-[#00954F]">
-                {Math.round(result.confidence * 100)}%
+                {Math.round(photo.confidence * 100)}%
               </span>
+              {" · "}
+              {photo.breed}, {photo.estimated_age}
             </p>
           </div>
 
           {/* Financial card */}
           <PetFinancialCard
-            petName={result.pet_name}
-            breed={result.breed}
-            age={result.age}
-            gender={result.gender}
-            petId={result.pet_id}
+            petName={petName || "우리 아이"}
+            breed={photo.breed}
+            age={cost.age}
+            gender={photo.gender_guess}
+            petId={`PET-${Math.floor(Math.random() * 9000 + 1000)}`}
           />
 
           {/* Lifetime cost */}
           <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-            <p className="text-xs text-gray-500 mb-1">예상 평생 의료비</p>
-            <p className="text-2xl font-bold text-gray-900">
-              ₩{result.lifetime_cost.toLocaleString()}
+            <p className="text-xs text-gray-500 mb-1">
+              예상 평생 의료비 ({cost.remaining_years}년 기준)
             </p>
+            <p className="text-2xl font-bold text-gray-900">
+              ₩{cost.total_lifetime_cost.toLocaleString()}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">{photo.health_notes}</p>
           </div>
 
           {/* Common conditions */}
@@ -178,7 +226,7 @@ export default function PetProfilePage() {
               주요 발생 질환
             </p>
             <div className="flex flex-wrap gap-2">
-              {result.common_conditions.map((cond) => (
+              {cost.common_conditions.map((cond) => (
                 <span
                   key={cond}
                   className="text-xs bg-red-50 text-red-600 border border-red-100 px-2.5 py-1 rounded-full font-medium"
@@ -191,15 +239,15 @@ export default function PetProfilePage() {
 
           {/* Cost breakdown chart */}
           <CostBreakdown
-            breakdown={result.cost_breakdown}
-            total={result.lifetime_cost}
+            breakdown={cost.breakdown}
+            total={cost.total_lifetime_cost}
           />
 
           {/* Savings recommendation */}
           <SavingsRecommendation
-            monthlyAmount={result.monthly_savings}
-            termMonths={result.savings_term_months}
-            interestRate={result.savings_interest_rate}
+            monthlyAmount={savings.monthly_amount}
+            termMonths={savings.term_years * 12}
+            interestRate={savings.interest_rate}
           />
 
           {/* CTA buttons */}

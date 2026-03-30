@@ -8,7 +8,7 @@ interface BreakdownItem {
 interface CostBreakdownProps {
   breakdown: {
     checkup: number;
-    treatment: number;
+    disease: number;
     surgery: number;
   };
   total: number;
@@ -31,7 +31,7 @@ export default function CostBreakdown({ breakdown, total }: CostBreakdownProps) 
     },
     {
       label: "질병치료",
-      amount: breakdown.treatment,
+      amount: breakdown.disease,
       color: "text-orange-500",
       bgColor: "bg-orange-400",
     },

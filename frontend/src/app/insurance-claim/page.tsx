@@ -7,29 +7,38 @@ import ReceiptPreview from "@/components/ReceiptPreview";
 import ClaimForm, { ClaimField } from "@/components/ClaimForm";
 import { apiPost, apiPostBlob, ApiTimeoutError } from "@/lib/api";
 
+/* ── Types matching backend OcrResultResponse ── */
+
+interface ReceiptItem {
+  name: string;
+  quantity: number;
+  unit_price: number;
+  amount: number;
+}
+
 interface OcrResult {
-  clinic_name: string;
-  visit_date: string;
-  items: { description: string; amount: number }[];
-  total: number;
-  patient_name: string;
-  diagnosis: string;
-  claim_amount: number;
+  clinic_name: string | null;
+  clinic_business_number: string | null;
+  visit_date: string | null;
+  diagnosis: string | null;
+  items: ReceiptItem[];
+  total_amount: number;
+  pet_name: string | null;
 }
 
 const SAMPLE_OCR: OcrResult = {
   clinic_name: "행복동물병원",
+  clinic_business_number: "123-45-67890",
   visit_date: "2026-03-28",
+  diagnosis: "슬개골 탈구 (Grade II) - 좌측 후지",
   items: [
-    { description: "슬개골 탈구 수술비", amount: 1200000 },
-    { description: "마취비", amount: 150000 },
-    { description: "입원비 (3일)", amount: 210000 },
-    { description: "약제비", amount: 45000 },
+    { name: "슬개골 정복술", quantity: 1, unit_price: 850000, amount: 850000 },
+    { name: "전신마취 (흡입)", quantity: 1, unit_price: 150000, amount: 150000 },
+    { name: "입원비 (3일)", quantity: 1, unit_price: 60000, amount: 180000 },
+    { name: "항생제 + 소염진통제", quantity: 1, unit_price: 45000, amount: 45000 },
   ],
-  total: 1605000,
-  patient_name: "하나 (말티즈)",
-  diagnosis: "슬개골 탈구 (Grade 2)",
-  claim_amount: 1605000,
+  total_amount: 1225000,
+  pet_name: "보리",
 };
 
 type Stage = "input" | "loading" | "result";
@@ -37,28 +46,32 @@ type Stage = "input" | "loading" | "result";
 function buildFields(ocr: OcrResult): ClaimField[] {
   return [
     {
-      key: "patient_name",
+      key: "pet_name",
       label: "피보험동물",
-      value: ocr.patient_name,
-      aiDetected: true,
+      value: ocr.pet_name || "우리 아이",
+      aiDetected: !!ocr.pet_name,
     },
     {
       key: "clinic_name",
       label: "진료기관",
-      value: ocr.clinic_name,
-      aiDetected: true,
+      value: ocr.clinic_name
+        ? `${ocr.clinic_name}${ocr.clinic_business_number ? ` (사업자 ${ocr.clinic_business_number})` : ""}`
+        : "",
+      aiDetected: !!ocr.clinic_name,
     },
     {
       key: "diagnosis",
       label: "상병명",
-      value: ocr.diagnosis,
-      aiDetected: true,
+      value: ocr.diagnosis || "",
+      aiDetected: !!ocr.diagnosis,
     },
     {
       key: "claim_amount",
       label: "청구금액",
-      value: ocr.claim_amount ? `${ocr.claim_amount.toLocaleString()}원` : "",
-      aiDetected: true,
+      value: ocr.total_amount
+        ? `₩${ocr.total_amount.toLocaleString()} (보장한도 내 ₩${Math.round(ocr.total_amount * 0.8).toLocaleString()} 예상)`
+        : "",
+      aiDetected: !!ocr.total_amount,
     },
   ];
 }
@@ -77,22 +90,18 @@ export default function InsuranceClaimPage() {
 
     try {
       const data = await apiPost<OcrResult>("/api/claim/ocr", fd, 30000);
-      const f = buildFields(data);
       setOcrData(data);
-      setFields(f);
+      setFields(buildFields(data));
       setStage("result");
     } catch (err) {
-      if (err instanceof ApiTimeoutError) {
-        return; // spinner timeout button will handle
-      }
+      if (err instanceof ApiTimeoutError) return;
       console.error(err);
     }
   }
 
   function handleTimeout() {
-    const f = buildFields(SAMPLE_OCR);
     setOcrData(SAMPLE_OCR);
-    setFields(f);
+    setFields(buildFields(SAMPLE_OCR));
     setStage("result");
   }
 
@@ -106,20 +115,21 @@ export default function InsuranceClaimPage() {
     if (!ocrData) return;
     setDownloading(true);
 
-    // Build claim payload from current field values
-    const fieldMap = Object.fromEntries(fields.map((f) => [f.key, f.value]));
-    const claimPayload = {
-      clinic_name: fieldMap.clinic_name ?? ocrData.clinic_name,
+    const pdfPayload = {
+      pet_name: ocrData.pet_name || "우리 아이",
+      breed: "말티즈",
+      age: "3세",
+      clinic_name: ocrData.clinic_name,
+      clinic_business_number: ocrData.clinic_business_number,
       visit_date: ocrData.visit_date,
-      patient_name: fieldMap.patient_name ?? ocrData.patient_name,
-      diagnosis: fieldMap.diagnosis ?? ocrData.diagnosis,
-      claim_amount: fieldMap.claim_amount ?? String(ocrData.claim_amount),
+      diagnosis: ocrData.diagnosis,
       items: ocrData.items,
-      total: ocrData.total,
+      total_amount: ocrData.total_amount,
+      estimated_payout: Math.round(ocrData.total_amount * 0.8),
     };
 
     try {
-      const blob = await apiPostBlob("/api/claim/generate-pdf", claimPayload, 30000);
+      const blob = await apiPostBlob("/api/claim/generate-pdf", pdfPayload, 30000);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -128,7 +138,6 @@ export default function InsuranceClaimPage() {
       URL.revokeObjectURL(url);
     } catch (err) {
       console.error("PDF 생성 실패:", err);
-      alert("PDF 생성에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setDownloading(false);
     }
@@ -158,21 +167,6 @@ export default function InsuranceClaimPage() {
             onUpload={handleUpload}
             label="영수증 사진 업로드"
             sublabel="병원 영수증을 촬영하거나 갤러리에서 선택하세요"
-            icon={
-              <svg
-                width="40"
-                height="40"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#9ca3af"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="4" y="3" width="16" height="18" rx="2" />
-                <path d="M8 7h8M8 11h8M8 15h5" />
-              </svg>
-            }
           />
         </div>
       )}
@@ -187,42 +181,24 @@ export default function InsuranceClaimPage() {
 
       {stage === "result" && ocrData && (
         <div className="space-y-4">
-          {/* Receipt preview */}
           <ReceiptPreview
-            clinicName={ocrData.clinic_name}
-            visitDate={ocrData.visit_date}
-            items={ocrData.items}
-            total={ocrData.total}
+            clinicName={ocrData.clinic_name || "알수없음"}
+            visitDate={ocrData.visit_date || "알수없음"}
+            items={ocrData.items.map((i) => ({
+              description: i.name,
+              amount: i.amount,
+            }))}
+            total={ocrData.total_amount}
           />
 
-          {/* Claim form */}
           <ClaimForm fields={fields} onChange={handleFieldChange} />
 
-          {/* PDF download */}
           <button
             onClick={handleDownloadPdf}
             disabled={downloading}
             className="w-full py-3.5 rounded-2xl bg-[#00954F] text-white font-bold text-sm active:bg-[#006B38] transition-colors shadow-md disabled:opacity-60 flex items-center justify-center gap-2"
           >
-            {downloading ? (
-              <>
-                <svg
-                  className="animate-spin w-4 h-4"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="2"
-                >
-                  <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
-                  <path d="M12 2a10 10 0 0 1 10 10" />
-                </svg>
-                PDF 생성 중…
-              </>
-            ) : (
-              <>
-                📄 청구서 PDF 다운로드
-              </>
-            )}
+            {downloading ? "PDF 생성 중…" : "📄 청구서 PDF 다운로드"}
           </button>
 
           <button
