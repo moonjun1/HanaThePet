@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>하나더펫 보험금 청구서</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
+      font-size: 11pt;
+      color: #1a1a1a;
+      background: #ffffff;
+      line-height: 1.5;
+    }
+
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      padding: 18mm 20mm;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 3px solid #00954F;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-circle {
+      width: 44px;
+      height: 44px;
+      background: #00954F;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 20px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-size: 18pt;
+      font-weight: 700;
+      color: #00954F;
+      letter-spacing: -0.5px;
+    }
+
+    .header-subtitle {
+      font-size: 9pt;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    .header-right {
+      text-align: right;
+      font-size: 9pt;
+      color: #555;
+    }
+
+    .doc-number {
+      font-size: 10pt;
+      font-weight: 600;
+      color: #333;
+    }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #00954F;
+      border-left: 4px solid #00954F;
+      padding-left: 8px;
+      margin-bottom: 10px;
+    }
+
+    /* ── Info Grid ── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border: 1px solid #d0d0d0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .info-row {
+      display: contents;
+    }
+
+    .info-label {
+      background: #f7f9f7;
+      padding: 7px 12px;
+      font-size: 9.5pt;
+      color: #555;
+      font-weight: 500;
+      border-bottom: 1px solid #e0e0e0;
+      border-right: 1px solid #e0e0e0;
+    }
+
+    .info-value {
+      padding: 7px 12px;
+      font-size: 9.5pt;
+      color: #1a1a1a;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .info-label:last-of-type,
+    .info-value:last-of-type {
+      border-bottom: none;
+    }
+
+    /* ── Clinic info single column ── */
+    .info-grid-single {
+      border: 1px solid #d0d0d0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .info-single-row {
+      display: flex;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .info-single-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-single-label {
+      background: #f7f9f7;
+      padding: 7px 12px;
+      font-size: 9.5pt;
+      color: #555;
+      font-weight: 500;
+      width: 130px;
+      flex-shrink: 0;
+      border-right: 1px solid #e0e0e0;
+    }
+
+    .info-single-value {
+      padding: 7px 12px;
+      font-size: 9.5pt;
+      color: #1a1a1a;
+      flex: 1;
+    }
+
+    /* ── AI OCR Badge ── */
+    .ai-badge {
+      display: inline-block;
+      background: #e8f5ee;
+      color: #00954F;
+      border: 1px solid #00954F;
+      border-radius: 12px;
+      padding: 2px 10px;
+      font-size: 8pt;
+      font-weight: 600;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+
+    /* ── Items Table ── */
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #d0d0d0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .items-table th {
+      background: #f7f9f7;
+      padding: 8px 10px;
+      font-size: 9.5pt;
+      font-weight: 600;
+      color: #444;
+      text-align: center;
+      border-bottom: 2px solid #d0d0d0;
+    }
+
+    .items-table td {
+      padding: 7px 10px;
+      font-size: 9.5pt;
+      border-bottom: 1px solid #ebebeb;
+      vertical-align: middle;
+    }
+
+    .items-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .items-table .col-name { text-align: left; }
+    .items-table .col-qty  { text-align: center; width: 60px; }
+    .items-table .col-price { text-align: right; width: 110px; }
+    .items-table .col-amount { text-align: right; width: 110px; }
+
+    /* ── Total Row ── */
+    .total-row td {
+      background: #00954F !important;
+      color: white !important;
+      font-weight: 700;
+      font-size: 10.5pt;
+      border-bottom: none !important;
+    }
+
+    /* ── Payout Row ── */
+    .payout-row td {
+      background: #e8f5ee !important;
+      color: #006633 !important;
+      font-weight: 600;
+      font-size: 10pt;
+      border-bottom: none !important;
+    }
+
+    /* ── Signature Area ── */
+    .signature-section {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 20px;
+    }
+
+    .declaration {
+      font-size: 9pt;
+      color: #555;
+      line-height: 1.6;
+      flex: 1;
+      background: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 12px 14px;
+    }
+
+    .signature-box {
+      width: 180px;
+      flex-shrink: 0;
+    }
+
+    .signature-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 9.5pt;
+    }
+
+    .signature-label {
+      color: #555;
+      width: 70px;
+    }
+
+    .signature-line {
+      flex: 1;
+      border-bottom: 1px solid #333;
+      margin-left: 8px;
+      height: 22px;
+    }
+
+    .signature-title {
+      font-size: 9pt;
+      font-weight: 600;
+      color: #333;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 24px;
+      padding-top: 12px;
+      border-top: 1px solid #d0d0d0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-brand {
+      font-size: 9pt;
+      font-weight: 700;
+      color: #00954F;
+    }
+
+    .footer-info {
+      font-size: 8pt;
+      color: #888;
+    }
+
+    .footer-date {
+      font-size: 8pt;
+      color: #888;
+      text-align: right;
+    }
+
+    /* ── Notice Box ── */
+    .notice-box {
+      background: #fffbf0;
+      border: 1px solid #f0d060;
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 8.5pt;
+      color: #7a6000;
+      margin-top: 14px;
+    }
+
+    .notice-box strong {
+      color: #5a4000;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Header ── -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-circle">H</div>
+      <div>
+        <div class="header-title">하나더펫 보험금 청구서</div>
+        <div class="header-subtitle">Hana The Pet Insurance Claim Form</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="doc-number">청구번호: {{ claim_number | default('자동생성') }}</div>
+      <div>접수일: {{ submitted_date | default('') }}</div>
+    </div>
+  </div>
+
+  <!-- ── Section 1: 피보험동물 정보 ── -->
+  <div class="section">
+    <div class="section-title">피보험동물 정보</div>
+    <div class="info-grid">
+      <div class="info-label">반려동물 이름</div>
+      <div class="info-value">{{ pet_name | default('-') }}</div>
+      <div class="info-label">견종</div>
+      <div class="info-value">{{ breed | default('-') }}</div>
+      <div class="info-label">나이</div>
+      <div class="info-value">{{ age | default('-') }}</div>
+      <div class="info-label">성별</div>
+      <div class="info-value">{{ gender | default('-') }}</div>
+      <div class="info-label">보호자 성명</div>
+      <div class="info-value">{{ owner_name | default('-') }}</div>
+      <div class="info-label">보호자 연락처</div>
+      <div class="info-value">{{ owner_phone | default('-') }}</div>
+    </div>
+  </div>
+
+  <!-- ── Section 2: 진료 정보 ── -->
+  <div class="section">
+    <div class="section-title">
+      진료 정보
+      <span class="ai-badge">AI OCR 자동 인식</span>
+    </div>
+    <div class="info-grid-single">
+      <div class="info-single-row">
+        <div class="info-single-label">동물병원명</div>
+        <div class="info-single-value">{{ clinic_name | default('-') }}</div>
+      </div>
+      <div class="info-single-row">
+        <div class="info-single-label">사업자등록번호</div>
+        <div class="info-single-value">{{ clinic_business_number | default('-') }}</div>
+      </div>
+      <div class="info-single-row">
+        <div class="info-single-label">진료일</div>
+        <div class="info-single-value">{{ visit_date | default('-') }}</div>
+      </div>
+      <div class="info-single-row">
+        <div class="info-single-label">진단명</div>
+        <div class="info-single-value">{{ diagnosis | default('-') }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Section 3: 진료비 내역 ── -->
+  <div class="section">
+    <div class="section-title">진료비 내역</div>
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th class="col-name">항목</th>
+          <th class="col-qty">수량</th>
+          <th class="col-price">단가 (원)</th>
+          <th class="col-amount">금액 (원)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td class="col-name">{{ item.name }}</td>
+          <td class="col-qty">{{ item.quantity }}</td>
+          <td class="col-price">{{ "{:,}".format(item.unit_price) }}</td>
+          <td class="col-amount">{{ "{:,}".format(item.amount) }}</td>
+        </tr>
+        {% endfor %}
+        <!-- Total Row -->
+        <tr class="total-row">
+          <td class="col-name" colspan="3">합계</td>
+          <td class="col-amount">{{ "{:,}".format(total_amount) }} 원</td>
+        </tr>
+        <!-- Estimated Payout Row -->
+        <tr class="payout-row">
+          <td class="col-name" colspan="3">예상 보험금 지급액</td>
+          <td class="col-amount">{{ "{:,}".format(estimated_payout) }} 원</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Signature Area ── -->
+  <div class="signature-section">
+    <div class="declaration">
+      본인은 위 청구 내용이 사실과 다름없음을 확인하며, 보험금 지급에 필요한 서류를
+      제출하였습니다. 허위 청구 시 관련 법령에 의거 처벌받을 수 있음을 인지하고 있습니다.
+    </div>
+    <div class="signature-box">
+      <div class="signature-title">서명란</div>
+      <div class="signature-row">
+        <span class="signature-label">청구인</span>
+        <div class="signature-line"></div>
+      </div>
+      <div class="signature-row">
+        <span class="signature-label">날짜</span>
+        <div class="signature-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Notice ── -->
+  <div class="notice-box">
+    <strong>안내:</strong> 본 청구서는 AI OCR 기술로 자동 작성되었습니다.
+    내용을 반드시 확인하신 후 서명하여 제출해 주세요.
+    보험금 지급 예상액은 실제 심사 결과에 따라 달라질 수 있습니다.
+  </div>
+
+  <!-- ── Footer ── -->
+  <div class="footer">
+    <div class="footer-brand">하나더펫 (Hana The Pet)</div>
+    <div class="footer-info">고객센터: 1588-0000 | www.hanathepet.com</div>
+    <div class="footer-date">생성일: {{ generated_date }}</div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,70 @@
+{
+  "savings": {
+    "product_name": "하나더펫 적금",
+    "interest_rate": 3.5,
+    "min_monthly": 10000,
+    "max_monthly": 500000,
+    "currency": "KRW",
+    "benefits": [
+      "반려동물 병원비 우선 지원",
+      "펫 전용 금융 서비스 제공",
+      "만기 시 펫 보험 연계 할인 5%",
+      "월 자동이체 설정 시 우대금리 0.3% 추가"
+    ],
+    "description": "반려동물의 평생 의료비를 위한 전용 적금 상품"
+  },
+  "insurance": [
+    {
+      "product_id": "basic",
+      "product_name": "하나더펫 베이직",
+      "monthly_premium": 15000,
+      "coverage": {
+        "outpatient": 30000,
+        "hospitalization": 100000,
+        "surgery": 500000,
+        "annual_limit": 2000000
+      },
+      "deductible": 10000,
+      "waiting_period_days": 30,
+      "max_age": 10,
+      "features": [
+        "외래 진료비 보장 (1일 최대 3만원)",
+        "입원비 보장 (1일 최대 10만원)",
+        "수술비 보장 (연 최대 50만원)",
+        "연간 보장 한도 200만원"
+      ],
+      "exclusions": [
+        "선천성 질환",
+        "예방접종",
+        "미용·위생 관련 처치"
+      ]
+    },
+    {
+      "product_id": "premium",
+      "product_name": "하나더펫 프리미엄",
+      "monthly_premium": 28000,
+      "coverage": {
+        "outpatient": 50000,
+        "hospitalization": 200000,
+        "surgery": 1500000,
+        "annual_limit": 5000000
+      },
+      "deductible": 5000,
+      "waiting_period_days": 14,
+      "max_age": 12,
+      "features": [
+        "외래 진료비 보장 (1일 최대 5만원)",
+        "입원비 보장 (1일 최대 20만원)",
+        "수술비 보장 (연 최대 150만원)",
+        "연간 보장 한도 500만원",
+        "슬개골 탈구 등 일반 수술 포함",
+        "한방 진료 및 재활치료 포함"
+      ],
+      "exclusions": [
+        "선천성 질환",
+        "예방접종",
+        "미용·위생 관련 처치"
+      ]
+    }
+  ]
+}
